@@ -25,7 +25,8 @@ class TowerDefense:
 
         ## Set Monster spawns just for testing
         monster_img = pygame.image.load(join('assets', 'images', '0.png'))
-        monster = Monster(self.waypoints, monster_img, 3, self.all_sprites)
+        
+        monster = Monster(self.waypoints, monster_img, 2, self.all_sprites)
 
     def setup(self):
         map = load_pygame(join('assets', 'data', 'tmx', 'finals.tmx'))
@@ -75,8 +76,8 @@ class TowerDefense:
 
             # Draw everything on the game surface here
 
-            # draw lines for the pathfinding
-            pygame.draw.lines(self.game_surface, "black", False, self.waypoints)
+            # draw lines for the pathfinding debug
+            # pygame.draw.lines(self.game_surface, "black", False, self.waypoints)
             
 
             window_w, window_h = self.screen.get_size()

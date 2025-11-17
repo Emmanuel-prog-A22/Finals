@@ -7,7 +7,10 @@ class Monster(pygame.sprite.Sprite):
         self.pos = pygame.Vector2(self.waypoints[0])
         self.target_waypoint = 1
 
-        self.image = image
+        self.angle = 360
+
+        self.origin_img = image
+        self.image = self.origin_img
         self.rect = self.image.get_rect(center = self.pos)
 
         self.speed = speed
@@ -34,7 +37,13 @@ class Monster(pygame.sprite.Sprite):
         
         self.rect.center = self.pos
 
-
+    def rotate(self):
+        distance = self.target - self.pos
+        self.angle = math.degrees(math.atan2(-distance[0], -distance[1]))
+        self.image = pygame.transform.rotate(self.origin_img, self.angle)
+        self.rect = self.image.get_rect()
+        self.rect.center = self.pos
 
     def update(self):
         self.move()
+        self.rotate()
