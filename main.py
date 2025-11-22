@@ -17,14 +17,14 @@ class TowerDefense:
         pygame.display.set_caption("Fortress Frontline")
 
         self.all_sprites = AllSprite(self.GAME_WIDTH, self.GAME_HEIGHT)
+        self.ui_sprites = AllSprite(self.GAME_WIDTH, self.GAME_HEIGHT)
 
         self.clock = pygame.time.Clock()
         self.running = True
         self.fullscreen = False
         self.show_start = False
 
-        # UI manager for start screen
-        self.ui_sprites = AllSprite(self.GAME_WIDTH, self.GAME_HEIGHT)
+        self.button_sfx = pygame.mixer.Sound(join('assets', 'audio', 'sfx', 'button-click.wav'))
 
         # Load start screen and button images
         self.startscreen_images = {"start": pygame.image.load(join('assets', 'images', 'startscreen', 'Startscreen.png')).convert_alpha(),
@@ -32,10 +32,7 @@ class TowerDefense:
                                     "setting": pygame.image.load(join('assets', 'images', 'startscreen', 'settings.png')).convert_alpha(),
                                     "exit": pygame.image.load(join('assets', 'images', 'startscreen', 'exit.png')).convert_alpha(),
                                 }
-        # play button 123, 82
-        # settings button 200, 133
-        # exit button 154, 102
-        #self.setup()
+
         self.start_screen()
 
     def start_screen(self):
@@ -112,10 +109,13 @@ class TowerDefense:
                                 self.show_start = False
                                 self.ui_sprites.empty()
                                 self.setup()
+                                self.button_sfx.play()
                             elif ui.name == "settings":
                                 print("Settings button clicked")
+                                self.button_sfx.play()
                             elif ui.name == "exit":
                                 self.running = False
+                                self.button_sfx.play()
 
             # update
             self.all_sprites.update()
