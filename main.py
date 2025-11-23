@@ -47,13 +47,13 @@ class TowerDefense:
 
     def start_screen(self):
         self.show_start = True
-
         # User interface elements
-        self.start_screen_bg = UserInterface("startscreen", (0, 0), self.startscreen_images["start"], (self.GAME_WIDTH, self.GAME_HEIGHT), self.ui_sprites)
+        if not hasattr(self, "start_screen_bg"):
+            self.start_screen_bg = UserInterface("startscreen", (0, 0), self.startscreen_images["start"], (self.GAME_WIDTH, self.GAME_HEIGHT), self.ui_sprites)
 
-        for cloud in range(5):
-            rand_index = randint(1,4)
-            self.cloud = UserInterface("cloud", (randint(0 - 100, self.GAME_WIDTH), randint(0, self.GAME_HEIGHT // 2 - 200)), pygame.image.load(join('assets', 'images', 'startscreen', 'clouds', f'cloud{rand_index}.png')).convert_alpha(), (300, 80), self.ui_sprites)
+        if not hasattr(self, "cloud"):
+            for cloud in range(5):
+                self.cloud = UserInterface("cloud", (randint(0 - 100, self.GAME_WIDTH), randint(0, self.GAME_HEIGHT // 2 - 200)), pygame.image.load(join('assets', 'images', 'startscreen', 'clouds', f'cloud{randint(1, 4)}.png')).convert_alpha(), (300, 80), self.ui_sprites)
 
         self.logo = UserInterface("logo", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 250), self.startscreen_images["logo"], (417, 146), self.ui_sprites)
         self.play_button = UserInterface("play", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 100), self.startscreen_images["play"], (150, 65), self.ui_sprites)
@@ -63,7 +63,7 @@ class TowerDefense:
     def map_selection(self):
         self.show_map = True
 
-        self.ui_sprites.add(self.start_screen_bg, self.logo)
+        self.ui_sprites.add(self.logo)
         
         self.map_button = UserInterface("map", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 100), self.map_selection_images["map"], (150, 65), self.ui_sprites)
         self.upgrades_button = UserInterface("upgrades", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2), self.map_selection_images["upgrade"], (265, 68), self.ui_sprites)
@@ -87,7 +87,7 @@ class TowerDefense:
         for obj in map.get_layer_by_name("fences"):
             Objects((obj.x, obj.y), obj.image, (obj.width, obj.height), obj.rotation,self.all_sprites)
         
-        self.waypoints = [(waypoint.x, waypoint.y) for waypoint in map.get_layer_by_name("Waypoints")]
+        self.waypoints = [(waypoint.x, waypoint.y) for waypoint in map.get_layer_by_name("Waypoint1")]
 
         ## Set Monster spawns just for testing
         monster_img = pygame.image.load(join('assets', 'images', '0.png'))
@@ -154,7 +154,7 @@ class TowerDefense:
                                 print("Upgrades button clicked")
                             if ui.name == "back":
                                 self.show_map = False
-                                self.ui_sprites.empty()
+                                self.ui_sprites.remove(self.map_button, self.upgrades_button, self.back_button, self.logo)
                                 self.start_screen()
 
 

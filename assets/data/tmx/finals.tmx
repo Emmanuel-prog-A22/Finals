@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="22" tilewidth="32" tileheight="32" infinite="0" nextlayerid="9" nextobjectid="908">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="22" tilewidth="32" tileheight="32" infinite="0" nextlayerid="10" nextobjectid="929">
  <tileset firstgid="1" source="../tsx/Objects.tsx"/>
  <tileset firstgid="13" source="../tsx/Tileset_dirt.tsx"/>
  <tileset firstgid="31" source="../tsx/new path1.tsx"/>
@@ -397,38 +397,67 @@
   <object id="872" gid="302" x="107" y="391" width="34" height="20.3333"/>
   <object id="873" gid="306" x="94.6667" y="397" width="12.3333" height="8"/>
  </objectgroup>
- <objectgroup id="3" name="Waypoints">
-  <object id="29" x="1249.33" y="552.667">
+ <objectgroup id="3" name="Waypoints1">
+  <object id="908" x="-9.5" y="545.5">
    <point/>
   </object>
-  <object id="30" x="898.667" y="553">
+  <object id="909" x="376.5" y="544">
    <point/>
   </object>
-  <object id="31" x="852.667" y="485">
+  <object id="910" x="480" y="452">
    <point/>
   </object>
-  <object id="32" x="915.667" y="428">
+  <object id="911" x="481" y="386">
    <point/>
   </object>
-  <object id="33" x="1013.67" y="405.333">
+  <object id="912" x="454" y="351.5">
    <point/>
   </object>
-  <object id="372" x="30.6667" y="560">
+  <object id="913" x="347.5" y="351.5">
    <point/>
   </object>
-  <object id="373" x="1050.33" y="337.333">
+  <object id="914" x="266.5" y="262.5">
    <point/>
   </object>
-  <object id="374" x="1049.33" y="264.333">
+  <object id="915" x="300" y="220.5">
    <point/>
   </object>
-  <object id="688" x="978" y="233">
+  <object id="917" x="623.5" y="220">
    <point/>
   </object>
-  <object id="689" x="623" y="227">
+  <object id="918" x="623.5" y="73">
    <point/>
   </object>
-  <object id="690" x="621" y="116">
+ </objectgroup>
+ <objectgroup id="9" name="Waypoints2">
+  <object id="919" x="1284" y="540">
+   <point/>
+  </object>
+  <object id="920" x="903" y="547">
+   <point/>
+  </object>
+  <object id="921" x="841" y="485">
+   <point/>
+  </object>
+  <object id="922" x="893" y="418.5">
+   <point/>
+  </object>
+  <object id="923" x="994.5" y="415.5">
+   <point/>
+  </object>
+  <object id="924" x="1056" y="349">
+   <point/>
+  </object>
+  <object id="925" x="1055" y="257.5">
+   <point/>
+  </object>
+  <object id="926" x="1021" y="222.5">
+   <point/>
+  </object>
+  <object id="927" x="623.5" y="219.5">
+   <point/>
+  </object>
+  <object id="928" x="623" y="73.5">
    <point/>
   </object>
  </objectgroup>
