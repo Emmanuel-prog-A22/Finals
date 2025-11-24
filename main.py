@@ -1,6 +1,7 @@
 from settings import *
 from sprites import *
 from monsters import Monster
+from castle import CastleBox
 from user_interface import UserInterface
 
 import pygame
@@ -31,29 +32,37 @@ class TowerDefense:
         self.start_bgmusic.play(loops=-1)
 
         # load images
-        self.startscreen_images = {"start": pygame.image.load(join('assets', 'images', 'startscreen', 'Startscreen.png')).convert_alpha(),
-                                    "logo": pygame.image.load(join('assets', 'images', 'startscreen', 'logo.png')).convert_alpha(),
-                                    "play": pygame.image.load(join('assets', 'images', 'startscreen', 'play.png')).convert_alpha(),
-                                    "setting": pygame.image.load(join('assets', 'images', 'startscreen', 'settings.png')).convert_alpha(),
-                                    "exit": pygame.image.load(join('assets', 'images', 'startscreen', 'exit.png')).convert_alpha(),
-                                }
-        self.map_selection_images = {"map": pygame.image.load(join('assets', 'images', 'mapscreen', 'map.png')).convert_alpha(),
-                                    "back": pygame.image.load(join('assets', 'images', 'mapscreen', 'back.png')).convert_alpha(),
-                                    "upgrade": pygame.image.load(join('assets', 'images', 'mapscreen', 'upgrade.png')).convert_alpha()
-                                    }
+        self.startscreen_images = {
+            "start": pygame.image.load(join('assets', 'images', 'startscreen', 'Startscreen.png')).convert_alpha(),
+            "logo": pygame.image.load(join('assets', 'images', 'startscreen', 'logo.png')).convert_alpha(),
+            "play": pygame.image.load(join('assets', 'images', 'startscreen', 'play.png')).convert_alpha(),
+            "setting": pygame.image.load(join('assets', 'images', 'startscreen', 'settings.png')).convert_alpha(),
+            "exit": pygame.image.load(join('assets', 'images', 'startscreen', 'exit.png')).convert_alpha(),
+        }
+        self.map_selection_images = {
+            "map": pygame.image.load(join('assets', 'images', 'mapscreen', 'map.png')).convert_alpha(),
+            "back": pygame.image.load(join('assets', 'images', 'mapscreen', 'back.png')).convert_alpha(),
+            "upgrade": pygame.image.load(join('assets', 'images', 'mapscreen', 'upgrade.png')).convert_alpha()
+        }
         self.upgrades_images = {}
 
-        self.start_screen()
+        #self.start_screen()
+        self.setup()
 
     def start_screen(self):
         self.show_start = True
-        # User interface elements
         if not hasattr(self, "start_screen_bg"):
             self.start_screen_bg = UserInterface("startscreen", (0, 0), self.startscreen_images["start"], (self.GAME_WIDTH, self.GAME_HEIGHT), self.ui_sprites)
 
         if not hasattr(self, "cloud"):
             for cloud in range(5):
-                self.cloud = UserInterface("cloud", (randint(0 - 100, self.GAME_WIDTH), randint(0, self.GAME_HEIGHT // 2 - 200)), pygame.image.load(join('assets', 'images', 'startscreen', 'clouds', f'cloud{randint(1, 4)}.png')).convert_alpha(), (300, 80), self.ui_sprites)
+                self.cloud = UserInterface(
+                    "cloud",
+                    (randint(0 - 100, self.GAME_WIDTH), randint(0, self.GAME_HEIGHT // 2 - 200)),
+                    pygame.image.load(join('assets', 'images', 'startscreen', 'clouds', f'cloud{randint(1, 4)}.png')).convert_alpha(),
+                    (300, 80),
+                    self.ui_sprites
+                )
 
         self.logo = UserInterface("logo", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 250), self.startscreen_images["logo"], (417, 146), self.ui_sprites)
         self.play_button = UserInterface("play", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 100), self.startscreen_images["play"], (150, 65), self.ui_sprites)
@@ -72,30 +81,37 @@ class TowerDefense:
     def setup(self):
         map = load_pygame(join('assets', 'data', 'tmx', 'finals.tmx'))
 
+        # Ground tiles
         for x, y, image in map.get_layer_by_name("Ground").tiles():
             Sprites((x * TILE_SIZE, y * TILE_SIZE), image, self.all_sprites)
 
-        for obj in map.get_layer_by_name("castle"):
-            Objects((obj.x, obj.y), obj.image, (obj.width, obj.height), obj.rotation,self.all_sprites)
+        # Castles
+        self.castles = pygame.sprite.Group()
+        castle_layer = map.get_layer_by_name("castle")
+        for obj in castle_layer:
+            if hasattr(obj, "image") and obj.image is not None:
+                castle = CastleBox((obj.x, obj.y), obj.width, obj.height, self.all_sprites, image=obj.image)
+                self.all_sprites.add(castle)  # Add to all_sprites for correct draw order
+                self.castles.add(castle)      # Keep for HP & collision
 
-        for obj in map.get_layer_by_name("House"):
-            Objects((obj.x, obj.y), obj.image, (obj.width, obj.height), obj.rotation,self.all_sprites)
-            #print(type(obj.rotation))
-        for obj in map.get_layer_by_name("decoration"):
-            Objects((obj.x, obj.y), obj.image, (obj.width, obj.height), obj.rotation,self.all_sprites)
+                if obj.properties.get("hp_castle", False):
+                    castle.has_hp = True
 
-        for obj in map.get_layer_by_name("fences"):
-            Objects((obj.x, obj.y), obj.image, (obj.width, obj.height), obj.rotation,self.all_sprites)
+        # Houses, Decorations, Fences
+        for layer_name in ["House", "decoration", "fences"]:
+            for obj in map.get_layer_by_name(layer_name):
+                Objects((obj.x, obj.y), obj.image, (obj.width, obj.height), obj.rotation, self.all_sprites)
+
+        # Waypoints
+        self.waypoints = [(waypoint.x, waypoint.y) for waypoint in map.get_layer_by_name("Waypoints1")]
+        self.waypoints = [(waypoint.x, waypoint.y) for waypoint in map.get_layer_by_name("Waypoints2")]
         
-        self.waypoints = [(waypoint.x, waypoint.y) for waypoint in map.get_layer_by_name("Waypoint1")]
-
-        ## Set Monster spawns just for testing
+        # Monsters for testing
+        self.monsters = pygame.sprite.Group()
         monster_img = pygame.image.load(join('assets', 'images', '0.png'))
-        
-        for monster in range(3):
-            monster = Monster(self.waypoints, monster_img, randint(1,3), self.all_sprites)
-        ## Check x, y positions
-        #print(self.waypoints)
+        for _ in range(5):
+            monster = Monster(self.waypoints, monster_img, randint(1, 5), self.all_sprites)
+            self.monsters.add(monster)
 
     def run(self):
         while self.running:
@@ -106,7 +122,7 @@ class TowerDefense:
             scale_y = window_h / self.GAME_HEIGHT if self.GAME_HEIGHT != 0 else 1
             scaled_w = window_w
             scaled_h = window_h
-
+            
             offset_x = 0
             offset_y = 0
 
@@ -128,7 +144,7 @@ class TowerDefense:
                 if event.type == pygame.VIDEORESIZE and not self.fullscreen:
                     self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
-                # Mouse clicks: convert screen coordinates to game-surface coordinates (stretch mapping)
+                # Mouse clicks
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (self.show_start or self.show_map):
                     mx, my = event.pos
                     gx = (mx - offset_x) / scale_x
@@ -157,31 +173,37 @@ class TowerDefense:
                                 self.ui_sprites.remove(self.map_button, self.upgrades_button, self.back_button, self.logo)
                                 self.start_screen()
 
+            # Update
+            self.all_sprites.update(dt)
+            self.ui_sprites.update(dt)
+            self.castles.update(dt)
 
-            # map current mouse position to game-surface coordinates for hover checks (stretch mapping)
-            mx, my = pygame.mouse.get_pos()
-            game_mouse = ( (mx - offset_x) / scale_x, (my - offset_y) / scale_y )
+            # Collision
+            hits = pygame.sprite.groupcollide(self.castles, self.monsters, False, False)
+            for castle, monsters in hits.items():
+                for monster in monsters:
+                    damage = getattr(monster, "damage", 10)
+                    castle.take_damage(damage)
+                    monster.kill()  
 
-            # update
-            self.all_sprites.update()
-            for ui in self.ui_sprites:
-                ui.update(dt)
-
-            # draw
+            # Draw
             self.game_surface.fill("grey")
             self.all_sprites.set_target_surface(self.game_surface)
             self.all_sprites.draw()
 
+            # Draw only HP bars on top
+            for castle in self.castles:
+                castle.draw_health(self.game_surface)
+            
+            # Draw UI
             if self.show_start or self.show_map:
                 self.ui_sprites.set_target_surface(self.game_surface)
                 self.ui_sprites.draw()
 
+            # Scale to window
             scaled_surface = pygame.transform.smoothscale(self.game_surface, (scaled_w, scaled_h))
-
-            # draw onto the window centered (letterbox)
             self.screen.fill("black")
             self.screen.blit(scaled_surface, (offset_x, offset_y))
-
             pygame.display.update()
 
         pygame.quit()
