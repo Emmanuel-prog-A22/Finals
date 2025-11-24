@@ -1,9 +1,11 @@
 from settings import *
 
 class UserInterface(pygame.sprite.Sprite):
-    def __init__(self, name, pos, surface, scale, group):
+    def __init__(self, name, pos, surface, scale, group, game_width=1280, game_height=704):
         super().__init__(group)
         self.name = name
+        self.game_width = game_width
+        self.game_height = game_height
         # store the base (scaled) image and position so we can toggle hover without compounding
         self.base_image = pygame.transform.scale(surface, scale)
         self.image = self.base_image
@@ -13,7 +15,12 @@ class UserInterface(pygame.sprite.Sprite):
         else:
             self.rect = self.image.get_rect(topleft = pos)
         
-        self.pos = pos
+        # Use Vector2 for position so we can animate/move smoothly
+        self.pos = pygame.math.Vector2(pos)
+        # target position (used for animated moves, e.g., ui_bg moving into view)
+        self.target_pos = None
+        # speed factor used when animating toward target_pos
+        self.move_speed = 6.0
         self.base_size = self.base_image.get_size()
         self.hovered = False
 
@@ -52,6 +59,49 @@ class UserInterface(pygame.sprite.Sprite):
             if self.rect.left > 1280:  # If cloud moves off screen, reset to left
                 self.rect.right = 0
 
+    def move_to(self):
+        # Animate to visible positions for specific UI elements
+        if self.name == "ui_bg":
+            # Move to center of the screen
+            self.target_pos = pygame.math.Vector2(self.game_width // 2, self.game_height // 2)
+        elif self.name == "ui_back_btn":
+            self.target_pos = pygame.math.Vector2(150, 100)
+        elif self.name == "ui_play_btn":
+            self.target_pos = pygame.math.Vector2(self.game_width // 2, self.game_height - 100)
+        elif self.name == "map_1":
+            self.target_pos = pygame.math.Vector2(self.game_width // 2 - 200, 300)
+        else:
+            self.target_pos = None
+
+    def move_away(self):
+        # Animate back to off-screen positions
+        if self.name == "ui_bg":
+            self.target_pos = pygame.math.Vector2(self.game_width // 2, -self.game_height // 2 -50)
+        elif self.name == "ui_back_btn":
+            self.target_pos = pygame.math.Vector2(60, -self.game_height + 60)
+        elif self.name == "ui_play_btn":
+            self.target_pos = pygame.math.Vector2(self.game_width // 2, -self.game_height - 200)
+        elif self.name == "map_1":
+            self.target_pos = pygame.math.Vector2(self.game_width // 2 - 150, -self.game_height + 150)
+        else:
+            self.target_pos = None
+
     def update(self, dt):
         self.onMouseOver()
+
+        if self.target_pos is not None:
+            to_target = self.target_pos - self.pos
+            if to_target.length() <= 0.5:
+                self.pos = self.target_pos
+                self.target_pos = None
+            else:
+                step = to_target * min(1.0, self.move_speed * dt)
+                self.pos += step
+            if self.name in ("ui_bg", "ui_back_btn", "ui_play_btn"):
+                self.rect = self.image.get_rect(center=(round(self.pos.x), round(self.pos.y)))
+            elif self.name == "startscreen":
+                self.rect = self.image.get_rect(topleft=(round(self.pos.x), round(self.pos.y)))
+            else:
+                self.rect = self.image.get_rect(center=(round(self.pos.x), round(self.pos.y)))
+
         self.move(dt)

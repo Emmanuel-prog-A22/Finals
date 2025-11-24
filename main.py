@@ -42,6 +42,7 @@ class TowerDefense:
                                     "upgrade": pygame.image.load(join('assets', 'images', 'mapscreen', 'upgrade.png')).convert_alpha()
                                     }
         self.upgrades_images = {}
+        self.map_images = {"map1": pygame.image.load(join('assets', 'images', 'mapscreen', 'map1.png')).convert_alpha()}
 
         self.start_screen()
 
@@ -49,25 +50,28 @@ class TowerDefense:
         self.show_start = True
         # User interface elements
         if not hasattr(self, "start_screen_bg"):
-            self.start_screen_bg = UserInterface("startscreen", (0, 0), self.startscreen_images["start"], (self.GAME_WIDTH, self.GAME_HEIGHT), self.ui_sprites)
+            self.start_screen_bg = UserInterface("startscreen", (0, 0), self.startscreen_images["start"], (self.GAME_WIDTH, self.GAME_HEIGHT), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
 
         if not hasattr(self, "cloud"):
             for cloud in range(5):
-                self.cloud = UserInterface("cloud", (randint(0 - 100, self.GAME_WIDTH), randint(0, self.GAME_HEIGHT // 2 - 200)), pygame.image.load(join('assets', 'images', 'startscreen', 'clouds', f'cloud{randint(1, 4)}.png')).convert_alpha(), (300, 80), self.ui_sprites)
+                self.cloud = UserInterface("cloud", (randint(0 - 100, self.GAME_WIDTH), randint(0, self.GAME_HEIGHT // 2 - 200)), pygame.image.load(join('assets', 'images', 'startscreen', 'clouds', f'cloud{randint(1, 4)}.png')).convert_alpha(), (300, 80), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
 
-        self.logo = UserInterface("logo", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 250), self.startscreen_images["logo"], (417, 146), self.ui_sprites)
-        self.play_button = UserInterface("play", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 100), self.startscreen_images["play"], (150, 65), self.ui_sprites)
-        self.settings_button = UserInterface("settings", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2), self.startscreen_images["setting"], (254, 68), self.ui_sprites)
-        self.exit_button = UserInterface("exit", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 + 100), self.startscreen_images["exit"], (139, 58), self.ui_sprites)
+        self.logo = UserInterface("logo", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 250), self.startscreen_images["logo"], (417, 146), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
+        self.play_button = UserInterface("play", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 100), self.startscreen_images["play"], (150, 65), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
+        self.settings_button = UserInterface("settings", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2), self.startscreen_images["setting"], (254, 68), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
+        self.exit_button = UserInterface("exit", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 + 100), self.startscreen_images["exit"], (139, 58), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
 
     def map_selection(self):
         self.show_map = True
 
-        self.ui_sprites.add(self.logo)
-        
-        self.map_button = UserInterface("map", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 100), self.map_selection_images["map"], (150, 65), self.ui_sprites)
-        self.upgrades_button = UserInterface("upgrades", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2), self.map_selection_images["upgrade"], (265, 68), self.ui_sprites)
-        self.back_button = UserInterface("back", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 + 100), self.map_selection_images["back"], (139, 58), self.ui_sprites)
+        self.map_button = UserInterface("map", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 100), self.map_selection_images["map"], (150, 65), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
+        self.upgrades_button = UserInterface("upgrades", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2), self.map_selection_images["upgrade"], (265, 68), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
+        self.back_button = UserInterface("back", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 + 100), self.map_selection_images["back"], (139, 58), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
+
+        self.map_ui_surface = UserInterface("ui_bg", (self.GAME_WIDTH // 2, -self.GAME_HEIGHT), pygame.image.load(join('assets', 'images', 'grybg.png')).convert_alpha(), (self.GAME_WIDTH, self.GAME_HEIGHT), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
+        self.map_ui_back_btn = UserInterface("ui_back_btn", (60, -self.GAME_HEIGHT + 60), self.map_selection_images["back"], (139, 58), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
+        self.map_ui_play_btn = UserInterface("ui_play_btn", (self.GAME_WIDTH // 2, -self.GAME_HEIGHT - 200), self.startscreen_images["play"], (150, 65), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
+        self.map_ui_map_1 = UserInterface("map_1", (self.GAME_WIDTH // 2 - 150, -self.GAME_HEIGHT + 150), self.map_images["map1"], (150, 150), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
 
     def setup(self):
         map = load_pygame(join('assets', 'data', 'tmx', 'finals.tmx'))
@@ -87,15 +91,13 @@ class TowerDefense:
         for obj in map.get_layer_by_name("fences"):
             Objects((obj.x, obj.y), obj.image, (obj.width, obj.height), obj.rotation,self.all_sprites)
         
-        self.waypoints = [(waypoint.x, waypoint.y) for waypoint in map.get_layer_by_name("Waypoint1")]
+        self.waypoints = [(waypoint.x, waypoint.y) for waypoint in map.get_layer_by_name("Waypoints1")]
 
         ## Set Monster spawns just for testing
         monster_img = pygame.image.load(join('assets', 'images', '0.png'))
         
-        for monster in range(3):
-            monster = Monster(self.waypoints, monster_img, randint(1,3), self.all_sprites)
         ## Check x, y positions
-        #print(self.waypoints)
+        print(self.waypoints)
 
     def run(self):
         while self.running:
@@ -142,20 +144,34 @@ class TowerDefense:
                                     pass
                             if ui.name == "play":
                                 self.show_start = False
-                                self.ui_sprites.remove(self.play_button, self.settings_button, self.exit_button, self.logo)
+                                self.ui_sprites.remove(self.play_button, self.settings_button, self.exit_button)
                                 self.map_selection()
                             if ui.name == "settings":
                                 print("Settings button clicked")
                             if ui.name == "exit":
                                 self.running = False
                             if ui.name == "map":
-                                print("Map button clicked")
+                                self.map_ui_surface.move_to()
+                                self.map_ui_back_btn.move_to()
+                                self.map_ui_play_btn.move_to()
+                                self.map_ui_map_1.move_to()
                             if ui.name == "upgrades":
                                 print("Upgrades button clicked")
                             if ui.name == "back":
                                 self.show_map = False
-                                self.ui_sprites.remove(self.map_button, self.upgrades_button, self.back_button, self.logo)
+                                self.ui_sprites.remove(self.map_button, self.upgrades_button, self.back_button, self.map_ui_surface)
                                 self.start_screen()
+                            if ui.name == "ui_play_btn":
+                                self.show_map = False
+                                self.ui_sprites.empty()
+                                self.setup()
+                                self.start_bgmusic.stop()
+                            if ui.name == "ui_back_btn":
+                                self.map_ui_surface.move_away()
+                                self.map_ui_back_btn.move_away()
+                                self.map_ui_play_btn.move_away()
+                                self.map_ui_map_1.move_away()
+
 
 
             # map current mouse position to game-surface coordinates for hover checks (stretch mapping)
