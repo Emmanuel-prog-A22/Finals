@@ -6,7 +6,7 @@ class UserInterface(pygame.sprite.Sprite):
         self.name = name
         self.game_width = game_width
         self.game_height = game_height
-        # store the base (scaled) image and position so we can toggle hover without compounding
+        
         self.base_image = pygame.transform.scale(surface, scale)
         self.image = self.base_image
 
@@ -15,11 +15,10 @@ class UserInterface(pygame.sprite.Sprite):
         else:
             self.rect = self.image.get_rect(topleft = pos)
         
-        # Use Vector2 for position so we can animate/move smoothly
+
         self.pos = pygame.math.Vector2(pos)
-        # target position (used for animated moves, e.g., ui_bg moving into view)
+
         self.target_pos = None
-        # speed factor used when animating toward target_pos
         self.move_speed = 6.0
         self.base_size = self.base_image.get_size()
         self.hovered = False
@@ -29,13 +28,18 @@ class UserInterface(pygame.sprite.Sprite):
         except Exception:
             self.hover_sfx = None
         
+        # Create a dimmed version
+        self.image = self.base_image
+        self.dimmed_image = self.make_dimmed_version(self.image, factor=0.5)
+        self.is_dimmed = False
+
     def onMouseOver(self, mouse_pos=None):
         # mouse_pos should be in game-surface coordinates. If not provided, use screen coords.
         if mouse_pos is None:
             mouse_pos = pygame.mouse.get_pos()
         if self.name != "cloud" and self.name != "startscreen":
             if self.rect.collidepoint(mouse_pos):
-                if not self.hovered:
+                if not self.hovered and not self.is_dimmed:
                     self.hovered = True
                     scale_factor = 1.1
                     new_size = (int(self.base_size[0] * scale_factor), int(self.base_size[1] * scale_factor))
@@ -85,6 +89,26 @@ class UserInterface(pygame.sprite.Sprite):
             self.target_pos = pygame.math.Vector2(self.game_width // 2 - 150, -self.game_height + 150)
         else:
             self.target_pos = None
+
+    def set_dimmed(self, state: bool):
+        if state and not self.is_dimmed:
+            self.image = self.dimmed_image
+            self.is_dimmed = True
+        elif not state and self.is_dimmed:
+            self.image = self.base_image
+            self.is_dimmed = False
+
+    def make_dimmed_version(self, image, factor=0.5):
+        dimmed = image.copy()
+
+        # Multiply RGB channels by the dim factor
+        darken = pygame.Surface(image.get_size(), pygame.SRCALPHA)
+        rgb = int(255 * factor)         # factor: 1.0 = normal, 0.5 = dimmer
+        darken.fill((rgb, rgb, rgb, 255))
+
+        dimmed.blit(darken, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        return dimmed
+
 
     def update(self, dt):
         self.onMouseOver()

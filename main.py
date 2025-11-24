@@ -63,6 +63,7 @@ class TowerDefense:
 
     def map_selection(self):
         self.show_map = True
+        self.map_selected = False
 
         self.map_button = UserInterface("map", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2 - 100), self.map_selection_images["map"], (150, 65), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
         self.upgrades_button = UserInterface("upgrades", (self.GAME_WIDTH // 2 + 360, self.GAME_HEIGHT // 2), self.map_selection_images["upgrade"], (265, 68), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
@@ -73,7 +74,9 @@ class TowerDefense:
         self.map_ui_play_btn = UserInterface("ui_play_btn", (self.GAME_WIDTH // 2, -self.GAME_HEIGHT - 200), self.startscreen_images["play"], (150, 65), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
         self.map_ui_map_1 = UserInterface("map_1", (self.GAME_WIDTH // 2 - 150, -self.GAME_HEIGHT + 150), self.map_images["map1"], (150, 150), self.ui_sprites, self.GAME_WIDTH, self.GAME_HEIGHT)
 
-    def setup(self):
+        self.map_ui_play_btn.set_dimmed(True)
+
+    def setup(self, map_name = None):
         map = load_pygame(join('assets', 'data', 'tmx', 'finals.tmx'))
 
         for x, y, image in map.get_layer_by_name("Ground").tiles():
@@ -137,7 +140,7 @@ class TowerDefense:
                     gy = (my - offset_y) / scale_y
                     for ui in list(self.ui_sprites):
                         if ui.rect.collidepoint((gx, gy)):
-                            if ui.name != "cloud" and ui.name != "startscreen":
+                            if ui.name != "cloud":
                                 try:
                                     self.button_sfx.play()
                                 except Exception:
@@ -161,12 +164,18 @@ class TowerDefense:
                                 self.show_map = False
                                 self.ui_sprites.remove(self.map_button, self.upgrades_button, self.back_button, self.map_ui_surface)
                                 self.start_screen()
+                            if ui.name == "map_1":
+                                self.map_selected = True
+                                self.map_ui_play_btn.set_dimmed(False)
                             if ui.name == "ui_play_btn":
-                                self.show_map = False
-                                self.ui_sprites.empty()
-                                self.setup()
-                                self.start_bgmusic.stop()
+                                if self.map_selected:
+                                    self.show_map = False
+                                    self.ui_sprites.empty()
+                                    self.setup()
+                                    self.start_bgmusic.stop()
                             if ui.name == "ui_back_btn":
+                                self.map_selected = False
+                                self.map_ui_play_btn.set_dimmed(True)
                                 self.map_ui_surface.move_away()
                                 self.map_ui_back_btn.move_away()
                                 self.map_ui_play_btn.move_away()
