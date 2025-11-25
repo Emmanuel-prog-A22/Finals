@@ -186,26 +186,35 @@ class TowerDefense:
                 # Mouse clicks for UI and tower drag/drop
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (self.show_start or self.show_map):
                     mx, my = event.pos
+
+                    # convert to game coordinates
                     gx = (mx - offset_x) / scale_x
                     gy = (my - offset_y) / scale_y
 
                     # UI interactions
                     for ui in list(self.ui_sprites):
+                        # IMPORTANT: use game coords for hit detection
                         if ui.rect.collidepoint((gx, gy)):
                             if ui.name != "cloud":
                                 try:
                                     self.button_sfx.play()
-                                except Exception:
+                                except:
                                     pass
+                                
+                            # --- START SCREEN BUTTONS ---
                             if ui.name == "play":
                                 self.show_start = False
                                 self.ui_sprites.remove(self.play_button, self.settings_button, self.exit_button)
                                 self.map_selection()
-                            if ui.name == "settings":
+
+                            elif ui.name == "settings":
                                 print("Settings button clicked")
-                            if ui.name == "exit":
+
+                            elif ui.name == "exit":
                                 self.running = False
-                            if ui.name == "map":
+
+                            # --- MAP SCREEN BUTTONS ---
+                            elif ui.name == "map":
                                 self.map_ui_surface.move_to()
                                 self.map_ui_back_btn.move_to()
                                 self.map_ui_play_btn.move_to()
@@ -214,23 +223,28 @@ class TowerDefense:
                                 self.upgrades_button.move_away()
                                 self.back_button.move_away()
                                 self.logo.move_away()
-                            if ui.name == "upgrades":
+
+                            elif ui.name == "upgrades":
                                 print("Upgrades button clicked")
-                            if ui.name == "back":
+
+                            elif ui.name == "back":
                                 self.show_map = False
                                 self.ui_sprites.remove(self.map_button, self.upgrades_button, self.back_button, self.map_ui_surface)
                                 self.start_screen()
-                            if ui.name == "map_1":
+
+                            elif ui.name == "map_1":
                                 self.map_selected = True
                                 self.map_ui_play_btn.set_dimmed(False)
-                            if ui.name == "ui_play_btn":
+
+                            elif ui.name == "ui_play_btn":
                                 if self.map_selected:
                                     self.show_map = False
                                     self.inGame = True
                                     self.ui_sprites.empty()
                                     self.setup()
                                     self.start_bgmusic.stop()
-                            if ui.name == "ui_back_btn":
+
+                            elif ui.name == "ui_back_btn":
                                 self.map_selected = False
                                 self.inGame = False
                                 self.map_ui_play_btn.set_dimmed(True)
@@ -302,7 +316,7 @@ class TowerDefense:
 
             # Update sprites
             self.all_sprites.update(dt)
-            self.ui_sprites.update(dt)
+            self.ui_sprites.update(dt, (gx, gy))
             self.castles.update(dt)
 
             # Collisions: monsters hitting castles

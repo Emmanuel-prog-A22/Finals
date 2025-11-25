@@ -33,29 +33,33 @@ class UserInterface(pygame.sprite.Sprite):
         self.dimmed_image = self.make_dimmed_version(self.image, factor=0.5)
         self.is_dimmed = False
 
-    def onMouseOver(self, mouse_pos=None):
-        # mouse_pos should be in game-surface coordinates. If not provided, use screen coords.
-        if mouse_pos is None:
-            mouse_pos = pygame.mouse.get_pos()
-        if self.name != "cloud" and self.name != "startscreen":
-            if self.rect.collidepoint(mouse_pos):
-                if not self.hovered and not self.is_dimmed:
-                    self.hovered = True
-                    scale_factor = 1.1
-                    new_size = (int(self.base_size[0] * scale_factor), int(self.base_size[1] * scale_factor))
-                    self.image = pygame.transform.smoothscale(self.base_image, new_size)
-                    # keep the position consistent (center for buttons)
-                    self.rect = self.image.get_rect(center=self.pos)
-                    if self.hover_sfx:
-                        try:
-                            self.hover_sfx.play()
-                        except Exception:
-                            pass
-            else:
-                if self.hovered:
-                    self.hovered = False
-                    self.image = self.base_image
-                    self.rect = self.image.get_rect(center=self.pos)
+    def onMouseOver(self, game_mouse_pos):
+        """Hover detection using GAME coordinates (never screen coords)."""
+        if self.name in ("cloud", "startscreen"):
+            return
+
+        if self.rect.collidepoint(game_mouse_pos):
+            if not self.hovered and not self.is_dimmed:
+                self.hovered = True
+                scale_factor = 1.1
+                new_size = (
+                    int(self.base_size[0] * scale_factor),
+                    int(self.base_size[1] * scale_factor)
+                )
+                self.image = pygame.transform.smoothscale(self.base_image, new_size)
+                self.rect = self.image.get_rect(center=self.pos)
+
+                if self.hover_sfx:
+                    try:
+                        self.hover_sfx.play()
+                    except:
+                        pass
+        else:
+            if self.hovered:
+                self.hovered = False
+                self.image = self.base_image
+                self.rect = self.image.get_rect(center=self.pos)
+
 
     def move(self, dt):
         if self.name == "cloud":
@@ -128,8 +132,9 @@ class UserInterface(pygame.sprite.Sprite):
         self.base_image.set_alpha(alpha)
         self.image = self.base_image
 
-    def update(self, dt):
-        self.onMouseOver()
+    def update(self, dt, game_mouse_pos = None):
+        if game_mouse_pos is not None:
+            self.onMouseOver(game_mouse_pos)
 
         if self.target_pos is not None:
             to_target = self.target_pos - self.pos
