@@ -110,7 +110,7 @@ class TowerDefense:
         
         self.setup()  # make sure setup is called after
         # Setup game map, sprites, castles, monsters
-        self.start_screen()
+       
 
     # -----------------------------------------------
     # Start screen UI
@@ -250,6 +250,10 @@ class TowerDefense:
             scale_x = window_w / self.GAME_WIDTH
             scale_y = window_h / self.GAME_HEIGHT
             offset_x, offset_y = 0, 0
+
+            mx, my = pygame.mouse.get_pos()
+            gx = (mx - offset_x) / scale_x
+            gy = (my - offset_y) / scale_y
 
             # Handle events
             for event in pygame.event.get():
