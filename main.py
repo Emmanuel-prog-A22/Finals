@@ -3,9 +3,10 @@ from sprites import *
 from monsters import Monster
 from castle import CastleBox
 from user_interface import UserInterface
-from tower import Tower  # import Tower class
-
+from tower import Tower
+from pytmx.util_pygame import load_pygame
 import pygame
+
 from random import randint
 
 class TowerDefense:
@@ -34,23 +35,12 @@ class TowerDefense:
         self.fullscreen = False
         self.show_start = False
         self.show_map = False
-
+        
         # Sounds
         self.button_sfx = pygame.mixer.Sound(join('assets', 'audio', 'sfx', 'button-click.wav'))
         self.start_bgmusic = pygame.mixer.Sound(join('assets', 'audio', 'bgm', 'start_bgm.wav'))
         self.start_bgmusic.set_volume(0.5)
         self.start_bgmusic.play(loops=-1)
-
-        # Tower drag-and-drop
-        self.tower_menu = []
-        for i in range(3):  # three tower types
-            rect = pygame.Rect(50 + i*100, self.GAME_HEIGHT - 100, 80, 80)
-            self.tower_menu.append({"rect": rect, "tower_type": f"tower_{i}"})
-        self.dragging_tower = None
-
-        # Placed towers and selected tower
-        self.placed_towers = []       # stores all towers placed
-        self.selected_tower = None    # currently selected tower
 
         # Load UI images
         self.startscreen_images = {
@@ -67,9 +57,52 @@ class TowerDefense:
         }
         self.upgrades_images = {}
 
-        # Setup game map, sprites, castles, monsters
-        self.setup()
+        #turret 
+        # Tower drag-and-drop
+        self.placed_towers = []       # stores all towers placed
+        self.selected_tower = None    # currently selected tower
+        self.dragging_tower = None
+        menu_y = self.GAME_HEIGHT - 100    # currently dragging tower
+        self.tower_menu = [
+            {"rect": pygame.Rect(50, menu_y, 80, 80),
+            "class": Tower,
+            "image": pygame.image.load("assets/data/graphics/tower/archer/archertower.png"),
+            "damage": 15,
+            "range": 120,
+            "fire_rate": 1.2,
+            "projectile_image": pygame.image.load("assets/data/graphics/projectiles/arrow.png"),
+            "projectile_speed": 400},
 
+            {"rect": pygame.Rect(150, menu_y, 80, 80),
+            "class": Tower,
+            "image": pygame.image.load("assets/data/graphics/tower/stone/stonetower.png"),
+            "damage": 25,
+            "range": 90,
+            "fire_rate": 0.8,
+            "projectile_image": pygame.image.load("assets/data/graphics/projectiles/stone.png"),
+            "projectile_speed": 300},
+
+            {"rect": pygame.Rect(250, menu_y, 80, 80),
+            "class": Tower,
+            "image": pygame.image.load("assets/data/graphics/tower/slingshot/slingshot.png"),
+            "damage": 10,
+            "range": 150,
+            "fire_rate": 1.5,
+            "projectile_image": pygame.image.load("assets/data/graphics/projectiles/slingshot.png"),
+            "projectile_speed": 500},
+
+            {"rect": pygame.Rect(350, menu_y, 80, 80),
+            "class": Tower,
+            "image": pygame.image.load("assets/data/graphics/tower/bomb/Bomb Tower.png"),
+            "damage": 40,
+            "range": 80,
+            "fire_rate": 0.5,
+            "projectile_image": pygame.image.load("assets/data/graphics/projectiles/bomb.png"),
+            "projectile_speed": 250},
+        ]
+        # list of tower buttons    # currently selected tower
+        
+        self.setup()  # make sure setup is called after
     # -----------------------------------------------
     # Start screen UI
     # -----------------------------------------------
@@ -110,15 +143,21 @@ class TowerDefense:
     # Setup map, sprites, castles, monsters
     # -----------------------------------------------
     def setup(self):
-        map = load_pygame(join('assets', 'data', 'tmx', 'finals.tmx'))
+        self.grass_tiles = []  # initialize here
+        tmx_data = load_pygame(join('assets', 'data', 'tmx', 'finals.tmx'))
 
         # Ground tiles
-        for x, y, image in map.get_layer_by_name("Ground").tiles():
+        ground_layer = tmx_data.get_layer_by_name("Ground")
+        for x, y, image in ground_layer.tiles():
             Sprites((x * TILE_SIZE, y * TILE_SIZE), image, self.all_sprites)
+            
+            tile_gid = ground_layer.data[y][x]  # get the GID for this tile
+            tile_rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            self.grass_tiles.append({"rect": tile_rect, "id": tile_gid})
 
         # Castles
         self.castles = pygame.sprite.Group()
-        castle_layer = map.get_layer_by_name("castle")
+        castle_layer = tmx_data.get_layer_by_name("castle")
         for obj in castle_layer:
             if hasattr(obj, "image") and obj.image is not None:
                 castle = CastleBox((obj.x, obj.y), obj.width, obj.height, self.all_sprites, image=obj.image)
@@ -127,27 +166,69 @@ class TowerDefense:
                 if obj.properties.get("hp_castle", False):
                     castle.has_hp = True
 
-        # Houses, decorations, fences
+        # Other layers
         for layer_name in ["House", "decoration", "fences"]:
-            for obj in map.get_layer_by_name(layer_name):
+            for obj in tmx_data.get_layer_by_name(layer_name):
                 Objects((obj.x, obj.y), obj.image, (obj.width, obj.height), obj.rotation, self.all_sprites)
 
-        # Waypoints for monsters
-        self.waypoints = [(waypoint.x, waypoint.y) for waypoint in map.get_layer_by_name("Waypoints1")]
+        # Waypoints
+        self.waypoints = [(waypoint.x, waypoint.y) for waypoint in tmx_data.get_layer_by_name("Waypoints1")]
 
-        # Monster group
+        # Monsters
         self.monsters = pygame.sprite.Group()
         monster_img = pygame.image.load(join('assets', 'images', '0.png'))
         for _ in range(5):
             monster = Monster(self.waypoints, monster_img, randint(1, 5), self.all_sprites)
             self.monsters.add(monster)
 
-        # Path rectangles
         self.path_rects = [pygame.Rect(x, y, TILE_SIZE, TILE_SIZE) for x, y in self.waypoints]
 
-        # Spawn extra monsters for testing
-        for _ in range(3):
-            Monster(self.waypoints, monster_img, randint(1,3), self.all_sprites)
+        for _ in range(5):
+            Monster(self.waypoints, monster_img, randint(1,5), self.all_sprites)
+
+    def can_place_tower(self, pos):
+        px, py = pos
+
+        on_valid_tile = False
+        for tile in self.grass_tiles:
+            if tile["rect"].collidepoint(px, py) and tile["id"] == 1:
+                on_valid_tile = True
+                break
+        if not on_valid_tile:
+            return False
+
+        # Must NOT overlap existing tower
+        for tower in self.placed_towers:
+            if tower.rect.collidepoint((px, py)):
+                return False
+
+        return True
+
+    def draw_tower_ui(self, surface):
+        """
+        Draw tower selection UI: upgrade/delete buttons and range indicator.
+        Should be called each frame for all placed towers.
+        """
+        for tower in self.placed_towers:
+            # Draw selection outline if tower is selected
+            tower.draw_selection(surface)
+
+            if tower == self.selected_tower:
+                # --- Upgrade/Delete Buttons ---
+                tower.delete_button = pygame.Rect(tower.rect.right + 10, tower.rect.top, 50, 30)
+                tower.upgrade_button = pygame.Rect(tower.rect.right + 10, tower.rect.top + 40, 50, 30)
+                pygame.draw.rect(surface, (255, 0, 0), tower.delete_button)
+                pygame.draw.rect(surface, (0, 255, 0), tower.upgrade_button)
+
+                # --- Range Indicator (semi-transparent) ---
+                if hasattr(tower, "range"):
+                    overlay = pygame.Surface((tower.range*2, tower.range*2), pygame.SRCALPHA)
+                    pygame.draw.circle(overlay, (0, 255, 0, 80), (tower.range, tower.range), tower.range)
+                    pygame.draw.circle(overlay, (0, 255, 0), (tower.range, tower.range), tower.range, 2)
+                    surface.blit(overlay, (tower.rect.centerx - tower.range, tower.rect.centery - tower.range))
+            else:
+                tower.delete_button = None
+                tower.upgrade_button = None
 
     # -----------------------------------------------
     # Main game loop
@@ -158,9 +239,9 @@ class TowerDefense:
             window_w, window_h = self.screen.get_size()
             scale_x = window_w / self.GAME_WIDTH
             scale_y = window_h / self.GAME_HEIGHT
-            offset_x = 0
-            offset_y = 0
+            offset_x, offset_y = 0, 0
 
+            # Handle events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -177,15 +258,16 @@ class TowerDefense:
                 if event.type == pygame.VIDEORESIZE and not self.fullscreen:
                     self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
-                # Mouse clicks for UI and tower drag/drop
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (self.show_start or self.show_map):
-                    mx, my = event.pos
+                # Mouse input
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mx, my = pygame.mouse.get_pos()
                     gx = (mx - offset_x) / scale_x
                     gy = (my - offset_y) / scale_y
+                    game_mouse = (gx, gy)
 
-                    # UI interactions
+                    # UI button interactions
                     for ui in list(self.ui_sprites):
-                        if ui.rect.collidepoint((gx, gy)):
+                        if ui.rect.collidepoint(game_mouse):
                             if ui.name not in ["cloud", "startscreen"]:
                                 try: self.button_sfx.play()
                                 except: pass
@@ -193,70 +275,76 @@ class TowerDefense:
                                 self.show_start = False
                                 self.ui_sprites.remove(self.play_button, self.settings_button, self.exit_button, self.logo)
                                 self.map_selection()
-                            if ui.name == "settings": print("Settings button clicked")
-                            if ui.name == "exit": self.running = False
-                            if ui.name == "map": print("Map button clicked")
-                            if ui.name == "upgrades": print("Upgrades button clicked")
-                            if ui.name == "back":
+                            elif ui.name == "settings":
+                                print("Settings button clicked")
+                            elif ui.name == "exit":
+                                self.running = False
+                            elif ui.name == "map":
+                                print("Map button clicked")
+                            elif ui.name == "upgrades":
+                                print("Upgrades button clicked")
+                            elif ui.name == "back":
                                 self.show_map = False
                                 self.ui_sprites.remove(self.map_button, self.upgrades_button, self.back_button, self.logo)
                                 self.start_screen()
 
-                    # Select towers
-                    for tower in self.placed_towers:
-                        if tower.rect.collidepoint((gx, gy)):
-                            if self.selected_tower:
-                                self.selected_tower.deselect()
-                            tower.select()
-                            self.selected_tower = tower
+                    # Tower menu click → start dragging
+                    for tower_btn in self.tower_menu:
+                        if tower_btn["rect"].collidepoint(game_mouse):
+                            img_copy = tower_btn["image"].copy() if isinstance(tower_btn["image"], pygame.Surface) else tower_btn["image"]
+                            self.dragging_tower = Tower(
+                                pos=(gx, gy),
+                                images=tower_btn["image"],
+                                damage=tower_btn.get("damage", 10),
+                                range_=tower_btn.get("range", 100),
+                                fire_rate=tower_btn.get("fire_rate", 1.0),
+                                projectile_image=tower_btn.get("projectile_image"),  # MUST pass image here
+                                projectile_speed=tower_btn.get("projectile_speed", 300)
+                            )
                             break
+
+
+                    # Check tower selection first
+                    self.selected_tower = None
+                    for tower in self.placed_towers:
+                        # Upgrade/Delete buttons click
+                        if tower.delete_button and tower.delete_button.collidepoint(game_mouse):
+                            self.all_sprites.remove(tower)
+                            self.placed_towers.remove(tower)
+                            if tower == self.selected_tower:
+                                self.selected_tower = None
+                            break
+                        elif tower.upgrade_button and tower.upgrade_button.collidepoint(game_mouse):
+                            tower.upgrade()
+                            break
+                        # Tower selection click
+                        if tower.rect.collidepoint(game_mouse):
+                            self.selected_tower = tower
+
+                # Update dragging tower position
+                if event.type == pygame.MOUSEMOTION and self.dragging_tower:
+                    mx, my = event.pos
+                    gx = (mx - offset_x) / scale_x
+                    gy = (my - offset_y) / scale_y
+                    self.dragging_tower.rect.center = (gx, gy)
+
+                # Place tower on mouse release
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.dragging_tower:
+                    px, py = self.dragging_tower.rect.center
+
+                    if self.can_place_tower((px, py)):
+                        # Valid placement
+                        self.all_sprites.add(self.dragging_tower)
+                        self.placed_towers.append(self.dragging_tower)
                     else:
-                        if self.selected_tower:
-                            self.selected_tower.deselect()
-                            self.selected_tower = None
+                        # Invalid → discard tower
+                        print("Invalid placement: must be on grass and not overlapping towers")
+                        print("Tile size:", TILE_SIZE)
+                        print('tile id', )
+                        print("Mouse position:", px, py)
+                    self.dragging_tower = None
 
-                # Handle tower button clicks
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if self.selected_tower:
-                        mx, my = event.pos
-                        gx = (mx - offset_x) / scale_x
-                        gy = (my - offset_y) / scale_y
-                        action = self.selected_tower.handle_button_click((gx, gy))
-                        if action == "delete":
-                            self.all_sprites.remove(self.selected_tower)
-                            self.placed_towers.remove(self.selected_tower)
-                            self.selected_tower = None
-
-            # Tower drag from menu
-            mx, my = pygame.mouse.get_pos()
-            # Convert to game coordinates
-            gx = (mx - offset_x) / scale_x
-            gy = (my - offset_y) / scale_y
-
-            if pygame.mouse.get_pressed()[0]:
-                for tower in self.tower_menu:
-                    if tower["rect"].collidepoint((mx, my)):
-                        self.dragging_tower = {
-                            "type": tower["tower_type"],
-                            "image": pygame.Surface((50,50)),
-                            "pos": pygame.Vector2(gx, gy)  # use game coordinates
-                        }
-                        self.dragging_tower["image"].fill((0,255,0))
-                        break
-
-            # Update dragging tower position every frame if dragging
-            if self.dragging_tower:
-                self.dragging_tower["pos"].update(gx, gy)
-
-
-            # Drop tower
-            if self.dragging_tower and not pygame.mouse.get_pressed()[0]:
-                tower = Tower(self.dragging_tower["pos"], self.dragging_tower["image"])
-                self.all_sprites.add(tower)
-                self.placed_towers.append(tower)
-                self.dragging_tower = None
-
-            # Update sprites
+            # Update all sprites
             self.all_sprites.update(dt)
             self.ui_sprites.update(dt)
             self.castles.update(dt)
@@ -269,37 +357,74 @@ class TowerDefense:
                     castle.take_damage(damage)
                     monster.kill()
 
-            # Update towers (attack, buttons)
-            for tower in self.placed_towers:
-                tower.update(dt)
-                tower.draw_buttons(self.game_surface)
-
             # Drawing
             self.game_surface.fill("grey")
             self.all_sprites.set_target_surface(self.game_surface)
             self.all_sprites.draw()
+            self.draw_tower_ui(self.game_surface)
+            # Draw castles' health
             for castle in self.castles:
                 castle.draw_health(self.game_surface)
+            
+            for tower in self.placed_towers:
+                tower.draw_selection(self.game_surface)
 
+            # Draw tower upgrade/delete buttons
+            for tower in self.placed_towers:
+                if tower == self.selected_tower:
+                    tower.delete_button = pygame.Rect(tower.rect.right + 10, tower.rect.top, 50, 30)
+                    tower.upgrade_button = pygame.Rect(tower.rect.right + 10, tower.rect.top + 40, 50, 30)
+                    pygame.draw.rect(self.game_surface, (255,0,0), tower.delete_button)
+                    pygame.draw.rect(self.game_surface, (0,255,0), tower.upgrade_button)
+                else:
+                    tower.delete_button = None
+                    tower.upgrade_button = None
+
+            # Draw dragging tower
+            if self.dragging_tower:
+                pos = self.dragging_tower.rect.center
+
+                # Check validity
+                valid = self.can_place_tower(pos)
+
+                # Color based on validity
+                color = (0,255,0) if valid else (255,0,0)
+
+                # Draw outline circle (tower range or tile size)
+                pygame.draw.circle(self.game_surface, color, pos, 40, 3)
+
+                # Draw semi-transparent circle (optional)
+                overlay = pygame.Surface((80,80), pygame.SRCALPHA)
+                pygame.draw.circle(overlay, (*color, 80), (40,40), 38)
+                self.game_surface.blit(overlay, (pos[0]-40, pos[1]-40))
+
+                # Draw tower image on top
+                self.game_surface.blit(self.dragging_tower.image, self.dragging_tower.rect.topleft)
+
+            # Draw tower menu images at bottom
+            for tower_btn in self.tower_menu:
+                self.game_surface.blit(
+                    pygame.transform.scale(tower_btn["image"], (tower_btn["rect"].width, tower_btn["rect"].height)),
+                    tower_btn["rect"].topleft
+                )
+            
+            for tower in self.placed_towers:
+                tower.update(dt, self.monsters, self.all_sprites)
+
+            # Draw UI on top
             if self.show_start or self.show_map:
                 self.ui_sprites.set_target_surface(self.game_surface)
                 self.ui_sprites.draw()
 
-            # Draw tower menu and dragging tower
-            for tower in self.tower_menu:
-                pygame.draw.rect(self.game_surface, (100,100,100), tower["rect"])
-            if self.dragging_tower:
-                img = self.dragging_tower["image"]
-                rect = img.get_rect(center=self.dragging_tower["pos"])
-                self.game_surface.blit(img, rect.topleft)
-
-            # Scale and draw to window
+            # Scale to window
             scaled_surface = pygame.transform.smoothscale(self.game_surface, (window_w, window_h))
             self.screen.fill("black")
             self.screen.blit(scaled_surface, (offset_x, offset_y))
             pygame.display.update()
 
         pygame.quit()
+
+
 
 
 # -----------------------------------------------

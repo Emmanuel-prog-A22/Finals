@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="40" height="22" tilewidth="32" tileheight="32" infinite="0" nextlayerid="14" nextobjectid="995">
- <tileset firstgid="1" source="../tsx/Objects.tsx"/>
+ <tileset firstgid="1"  source="../tsx/Objects.tsx"/>
  <tileset firstgid="13" source="../tsx/Tileset_dirt.tsx"/>
  <tileset firstgid="31" source="../tsx/new path1.tsx"/>
  <tileset firstgid="95" source="../tsx/decor2.tsx"/>
