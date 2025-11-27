@@ -2,7 +2,7 @@ import pygame
 
 class Tower(pygame.sprite.Sprite):
     def __init__(self, pos, images, damage=10, range_=100, fire_rate=1.0,
-                 projectile_image=None, projectile_speed=300):
+                 projectile_image=None, projectile_speed=300, size=(64, 64)):
         """
         pos: tuple (x, y)
         images: list of Surfaces for tower animation
@@ -15,16 +15,23 @@ class Tower(pygame.sprite.Sprite):
         super().__init__()
 
         # --- Animation & Images ---
+        # Normalize images input
         if isinstance(images, pygame.Surface):
-            self.images = [images.copy()]
-        else:
-            self.images = [img.copy() for img in images]
+            images = [images]
+
+        # SCALE ALL FRAMES CORRECTLY
+        self.images = [pygame.transform.scale(img, size) for img in images]
 
         self.current_frame = 0
-        self.animation_speed = 0.1  # seconds per frame
+        self.animation_speed = 0.1
         self.time_accumulator = 0.0
+
+        # Set first frame
         self.image = self.images[self.current_frame]
         self.rect = self.image.get_rect(center=(int(pos[0]), int(pos[1])))
+
+        # Store base image for build animation
+        self.original_image = self.image.copy()
 
         # --- Tower Stats ---
         self.range = range_

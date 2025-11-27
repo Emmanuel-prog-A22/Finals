@@ -77,7 +77,8 @@ class TowerDefense:
             "range": 120,
             "fire_rate": 1.2,
             "projectile_image": pygame.image.load("assets/data/graphics/projectiles/arrow.png"),
-            "projectile_speed": 400},
+            "projectile_speed": 400,
+            "size": (90, 140),},
 
             {"rect": pygame.Rect(150, menu_y, 80, 80),
             "class": Tower,
@@ -86,7 +87,8 @@ class TowerDefense:
             "range": 90,
             "fire_rate": 0.8,
             "projectile_image": pygame.image.load("assets/data/graphics/projectiles/stone.png"),
-            "projectile_speed": 300},
+            "projectile_speed": 300,
+            "size": (60, 70),},
 
             {"rect": pygame.Rect(250, menu_y, 80, 80),
             "class": Tower,
@@ -95,7 +97,8 @@ class TowerDefense:
             "range": 150,
             "fire_rate": 1.5,
             "projectile_image": pygame.image.load("assets/data/graphics/projectiles/slingshot.png"),
-            "projectile_speed": 500},
+            "projectile_speed": 500,
+            "size": (70, 90),},
 
             {"rect": pygame.Rect(350, menu_y, 80, 80),
             "class": Tower,
@@ -104,7 +107,8 @@ class TowerDefense:
             "range": 80,
             "fire_rate": 0.5,
             "projectile_image": pygame.image.load("assets/data/graphics/projectiles/bomb.png"),
-            "projectile_speed": 250},
+            "projectile_speed": 250,
+            "size": (70, 90),},
         ]
         # list of tower buttons    # currently selected tower
         
@@ -196,23 +200,41 @@ class TowerDefense:
         for _ in range(5):
             Monster(self.waypoints, monster_img, randint(1,5), self.all_sprites)
 
-    def can_place_tower(self, pos):
+    def can_place_tower(self, pos, tower_size=(64,64)):
         px, py = pos
+        w, h = tower_size
 
-        on_valid_tile = False
+        tower_rect = pygame.Rect(px - w//2, py - h, w, h)   # bottom-center placement
+
+        # Check if all corners are on valid grass tiles
+        corners = [
+            (tower_rect.left, tower_rect.top),
+            (tower_rect.right, tower_rect.top),
+            (tower_rect.left, tower_rect.bottom),
+            (tower_rect.right, tower_rect.bottom),
+            (tower_rect.centerx, tower_rect.bottom),
+        ]
+
+        valid_tile = False
         for tile in self.grass_tiles:
-            if tile["rect"].collidepoint(px, py) and tile["id"] == 1:
-                on_valid_tile = True
+            if tile["id"] == 1:  # grass tile
+                for c in corners:
+                    if tile["rect"].collidepoint(c):
+                        valid_tile = True
+                        break
+            if valid_tile:
                 break
-        if not on_valid_tile:
+
+        if not valid_tile:
             return False
 
-        # Must NOT overlap existing tower
-        for tower in self.placed_towers:
-            if tower.rect.collidepoint((px, py)):
+        # Check tower overlap
+        for t in self.placed_towers:
+            if tower_rect.colliderect(t.rect):
                 return False
 
         return True
+
 
     def draw_tower_ui(self, surface):
         """
@@ -313,7 +335,8 @@ class TowerDefense:
                                 range_=tower_btn.get("range", 100),
                                 fire_rate=tower_btn.get("fire_rate", 1.0),
                                 projectile_image=tower_btn.get("projectile_image"),  # MUST pass image here
-                                projectile_speed=tower_btn.get("projectile_speed", 300)
+                                projectile_speed=tower_btn.get("projectile_speed", 300),
+                                size=tower_btn.get("size", (64, 64))
                             )
                             break
 
@@ -346,7 +369,7 @@ class TowerDefense:
                 if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and self.dragging_tower:
                     px, py = self.dragging_tower.rect.center
 
-                    if self.can_place_tower((px, py)):
+                    if self.can_place_tower((px, py), self.dragging_tower.rect.size):
                         # Valid placement
                         self.all_sprites.add(self.dragging_tower)
                         self.placed_towers.append(self.dragging_tower)
