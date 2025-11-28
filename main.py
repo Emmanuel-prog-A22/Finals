@@ -124,7 +124,7 @@ class TowerDefense:
         self.load_towers_from_json()
         self.load_permanent_upgrades()
 
-        self.start_screen()  # make sure setup is called after
+        self.setup()  # make sure setup is called after
         self.start_bgmusic.play(loops=-1)
         # Setup game map, sprites, castles, monsters
 
@@ -340,6 +340,7 @@ class TowerDefense:
     # Setup map, sprites, castles, monsters
     # -----------------------------------------------
     def setup(self):
+        self.inGame = True
         self.grass_tiles = []  # initialize here
         tmx_data = load_pygame(join('assets', 'data', 'tmx', 'finals.tmx'))
 
@@ -494,192 +495,6 @@ class TowerDefense:
                             print("Cannot place tower here!")
                         # Clear dragging tower regardless of placement
                         self.dragging_tower = None
-                
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and (self.show_start or self.show_map):
-                    # UI interactions
-                    result = self.resolution_dropdown.handle_click((gx, gy))
-
-                    if result:
-                        self.current_resolution = result
-                        self.apply_saved_resolution()
-                        continue
-
-                    for ui in list(self.ui_sprites):
-                        # IMPORTANT: use game coords for hit detection
-                        if ui.rect.collidepoint((gx, gy)):
-                            if ui.name == "resolution_dd":
-                                if self.resolution_dropdown.open:
-                                    continue
-                            if ui.name != "cloud":
-                                try:
-                                    self.button_sfx.play()
-                                except:
-                                    pass
-                                
-                            # --- START SCREEN BUTTONS ---
-                            if ui.name == "play":
-                                for elem in self.start_ui:
-                                    if elem.name not in ("cloud", "startscreen", "logo"):
-                                        try:
-                                            self.ui_sprites.remove(elem)
-                                        except Exception:
-                                            pass
-                                for elem in self.settings_ui:
-                                    self.ui_sprites.remove(elem)
-                                # show map selection
-                                self.map_selection()
-                            elif ui.name == "settings":
-                                self.load_audio_settings()
-
-                                for elem in self.start_ui:
-                                    try:
-                                        elem.move_away()
-                                    except Exception:
-                                        pass
-                                for elem in self.settings_ui:
-                                    try:
-                                        elem.move_to()
-                                    except Exception:
-                                        pass
-                                try:
-                                    self.slider_music.bar.move_to()
-                                    self.slider_music.handle.move_to()
-                                    self.slider_sfx.bar.move_to()
-                                    self.slider_sfx.handle.move_to()
-                                except Exception:
-                                    pass
-                                try:
-                                    self.resolution_dropdown.move_to()
-                                except Exception:
-                                    pass
-                            elif ui.name == "play_back_btn":
-                                for elem in self.start_ui:
-                                    try:
-                                        elem.move_to()
-                                    except Exception:
-                                        pass
-                                for elem in self.settings_ui:
-                                    try:
-                                        elem.move_away()
-                                    except Exception:
-                                        pass
-                                try:
-                                    self.slider_music.bar.move_away()
-                                    self.slider_music.handle.move_away()
-                                    self.slider_sfx.bar.move_away()
-                                    self.slider_sfx.handle.move_away()
-                                except Exception:
-                                    pass
-                                try:
-                                    self.resolution_dropdown.move_away()
-                                except Exception:
-                                    pass
-
-                                self.save_settings()
-                            elif ui.name == "exit":
-                                self.running = False
-                            
-                            # --- MAP SCREEN BUTTONS ---
-                            elif ui.name == "map":
-                                for elem in self.map_ui:
-                                    try:
-                                        elem.move_away()
-                                    except Exception:
-                                        pass
-                                for elem in self.map_selection_ui:
-                                    try:
-                                        elem.move_to()
-                                    except Exception:
-                                        pass
-
-                                self.logo.move_away()
-                            elif ui.name == "upgrades":
-                                self.map_ui_surface.move_to()
-                                self.map_ui_back_btn.move_to()
-                                for elem in self.upgrade_ui:
-                                    try:
-                                        elem.move_to()
-                                    except Exception:
-                                        pass
-
-                                for elem in self.map_ui:
-                                    try:
-                                        elem.move_away()
-                                    except Exception:
-                                        pass
-                                self.logo.move_away()
-                            elif ui.name == "archer_tower":
-                                self.permanent_upgrades["archer_tower"]["damage_mult"] += 0.10
-                                self.permanent_upgrades["archer_tower"]["range_mult"] += 0.05
-                                self.permanent_upgrades["archer_tower"]["fire_rate_mult"] *= 0.95
-                                self.permanent_upgrades["archer_tower"]["projectile_speed_mult"] += 0.10
-                                self.save_permanent_upgrades()
-                            elif ui.name == "stone_tower":
-                                self.permanent_upgrades["stone_tower"]["damage_mult"] += 0.10
-                                self.permanent_upgrades["stone_tower"]["range_mult"] += 0.05
-                                self.permanent_upgrades["stone_tower"]["fire_rate_mult"] *= 0.95
-                                self.permanent_upgrades["stone_tower"]["projectile_speed_mult"] += 0.10
-                                self.save_permanent_upgrades()
-                            elif ui.name == "slingshot_tower":
-                                self.permanent_upgrades["slingshot_tower"]["damage_mult"] += 0.10
-                                self.permanent_upgrades["slingshot_tower"]["range_mult"] += 0.05
-                                self.permanent_upgrades["slingshot_tower"]["fire_rate_mult"] *= 0.95
-                                self.permanent_upgrades["slingshot_tower"]["projectile_speed_mult"] += 0.10
-                                self.save_permanent_upgrades()
-                            elif ui.name == "bomb_tower":
-                                self.permanent_upgrades["bomb_tower"]["damage_mult"] += 0.10
-                                self.permanent_upgrades["bomb_tower"]["range_mult"] += 0.05
-                                self.permanent_upgrades["bomb_tower"]["fire_rate_mult"] *= 0.95
-                                self.permanent_upgrades["bomb_tower"]["projectile_speed_mult"] += 0.10
-                                self.save_permanent_upgrades()
-                            elif ui.name == "back":
-                                self.show_map = False
-                                for elem in self.map_ui:
-                                    try:
-                                        self.ui_sprites.remove(elem)
-                                    except Exception:
-                                        pass
-                                for elem in self.map_selection_ui:
-                                    try:
-                                        self.ui_sprites.remove(elem)
-                                    except Exception:
-                                        pass
-                                for elem in self.upgrade_ui:
-                                    try:
-                                        self.ui_sprites.remove(elem)
-                                    except Exception:
-                                        pass
-                                self.load_display_settings()
-                                self.start_screen()
-                            elif ui.name == "map_1":
-                                self.map_selected = True
-                                self.map_ui_play_btn.set_dimmed(False)
-                            elif ui.name == "ui_play_btn":
-                                if self.map_selected:
-                                    self.show_map = False
-                                    self.inGame = True
-                                    self.ui_sprites.empty()
-                                    self.setup()
-                                    self.start_bgmusic.stop()
-                            elif ui.name == "ui_back_btn":
-                                self.map_selected = False
-                                self.map_ui_play_btn.set_dimmed(True)
-                                for elem in self.map_selection_ui:
-                                    try:
-                                        elem.move_away()
-                                    except Exception:
-                                        pass
-                                for elem in self.map_ui:
-                                    try:
-                                        elem.move_to()
-                                    except Exception:
-                                        pass
-                                for elem in self.upgrade_ui:
-                                    try:
-                                        elem.move_away()
-                                    except Exception:
-                                        pass
-                                self.logo.move_to()
 
                     # 2️⃣ Tower menu click → start dragging
                     for tower_btn in self.tower_menu:
@@ -716,6 +531,192 @@ class TowerDefense:
                             break
                         elif tower.rect.collidepoint(game_mouse):
                             self.selected_tower = tower
+
+                    # UI interactions
+                    if self.show_start or self.show_map:
+                        result = self.resolution_dropdown.handle_click((gx, gy))
+
+                        if result:
+                            self.current_resolution = result
+                            self.apply_saved_resolution()
+                            continue
+
+                        for ui in list(self.ui_sprites):
+                            # IMPORTANT: use game coords for hit detection
+                            if ui.rect.collidepoint((gx, gy)):
+                                if ui.name == "resolution_dd":
+                                    if self.resolution_dropdown.open:
+                                        continue
+                                if ui.name != "cloud":
+                                    try:
+                                        self.button_sfx.play()
+                                    except:
+                                        pass
+                                    
+                                # --- START SCREEN BUTTONS ---
+                                if ui.name == "play":
+                                    for elem in self.start_ui:
+                                        if elem.name not in ("cloud", "startscreen", "logo"):
+                                            try:
+                                                self.ui_sprites.remove(elem)
+                                            except Exception:
+                                                pass
+                                    for elem in self.settings_ui:
+                                        self.ui_sprites.remove(elem)
+                                    # show map selection
+                                    self.map_selection()
+                                elif ui.name == "settings":
+                                    self.load_audio_settings()
+
+                                    for elem in self.start_ui:
+                                        try:
+                                            elem.move_away()
+                                        except Exception:
+                                            pass
+                                    for elem in self.settings_ui:
+                                        try:
+                                            elem.move_to()
+                                        except Exception:
+                                            pass
+                                    try:
+                                        self.slider_music.bar.move_to()
+                                        self.slider_music.handle.move_to()
+                                        self.slider_sfx.bar.move_to()
+                                        self.slider_sfx.handle.move_to()
+                                    except Exception:
+                                        pass
+                                    try:
+                                        self.resolution_dropdown.move_to()
+                                    except Exception:
+                                        pass
+                                elif ui.name == "play_back_btn":
+                                    for elem in self.start_ui:
+                                        try:
+                                            elem.move_to()
+                                        except Exception:
+                                            pass
+                                    for elem in self.settings_ui:
+                                        try:
+                                            elem.move_away()
+                                        except Exception:
+                                            pass
+                                    try:
+                                        self.slider_music.bar.move_away()
+                                        self.slider_music.handle.move_away()
+                                        self.slider_sfx.bar.move_away()
+                                        self.slider_sfx.handle.move_away()
+                                    except Exception:
+                                        pass
+                                    try:
+                                        self.resolution_dropdown.move_away()
+                                    except Exception:
+                                        pass
+
+                                    self.save_settings()
+                                elif ui.name == "exit":
+                                    self.running = False
+                                
+                                # --- MAP SCREEN BUTTONS ---
+                                elif ui.name == "map":
+                                    for elem in self.map_ui:
+                                        try:
+                                            elem.move_away()
+                                        except Exception:
+                                            pass
+                                    for elem in self.map_selection_ui:
+                                        try:
+                                            elem.move_to()
+                                        except Exception:
+                                            pass
+
+                                    self.logo.move_away()
+                                elif ui.name == "upgrades":
+                                    self.map_ui_surface.move_to()
+                                    self.map_ui_back_btn.move_to()
+                                    for elem in self.upgrade_ui:
+                                        try:
+                                            elem.move_to()
+                                        except Exception:
+                                            pass
+
+                                    for elem in self.map_ui:
+                                        try:
+                                            elem.move_away()
+                                        except Exception:
+                                            pass
+                                    self.logo.move_away()
+                                elif ui.name == "archer_tower":
+                                    self.permanent_upgrades["archer_tower"]["damage_mult"] += 0.10
+                                    self.permanent_upgrades["archer_tower"]["range_mult"] += 0.05
+                                    self.permanent_upgrades["archer_tower"]["fire_rate_mult"] *= 0.95
+                                    self.permanent_upgrades["archer_tower"]["projectile_speed_mult"] += 0.10
+                                    self.save_permanent_upgrades()
+                                elif ui.name == "stone_tower":
+                                    self.permanent_upgrades["stone_tower"]["damage_mult"] += 0.10
+                                    self.permanent_upgrades["stone_tower"]["range_mult"] += 0.05
+                                    self.permanent_upgrades["stone_tower"]["fire_rate_mult"] *= 0.95
+                                    self.permanent_upgrades["stone_tower"]["projectile_speed_mult"] += 0.10
+                                    self.save_permanent_upgrades()
+                                elif ui.name == "slingshot_tower":
+                                    self.permanent_upgrades["slingshot_tower"]["damage_mult"] += 0.10
+                                    self.permanent_upgrades["slingshot_tower"]["range_mult"] += 0.05
+                                    self.permanent_upgrades["slingshot_tower"]["fire_rate_mult"] *= 0.95
+                                    self.permanent_upgrades["slingshot_tower"]["projectile_speed_mult"] += 0.10
+                                    self.save_permanent_upgrades()
+                                elif ui.name == "bomb_tower":
+                                    self.permanent_upgrades["bomb_tower"]["damage_mult"] += 0.10
+                                    self.permanent_upgrades["bomb_tower"]["range_mult"] += 0.05
+                                    self.permanent_upgrades["bomb_tower"]["fire_rate_mult"] *= 0.95
+                                    self.permanent_upgrades["bomb_tower"]["projectile_speed_mult"] += 0.10
+                                    self.save_permanent_upgrades()
+                                elif ui.name == "back":
+                                    self.show_map = False
+                                    for elem in self.map_ui:
+                                        try:
+                                            self.ui_sprites.remove(elem)
+                                        except Exception:
+                                            pass
+                                    for elem in self.map_selection_ui:
+                                        try:
+                                            self.ui_sprites.remove(elem)
+                                        except Exception:
+                                            pass
+                                    for elem in self.upgrade_ui:
+                                        try:
+                                            self.ui_sprites.remove(elem)
+                                        except Exception:
+                                            pass
+                                    self.load_display_settings()
+                                    self.start_screen()
+                                elif ui.name == "map_1":
+                                    self.map_selected = True
+                                    self.map_ui_play_btn.set_dimmed(False)
+                                elif ui.name == "ui_play_btn":
+                                    if self.map_selected:
+                                        self.show_map = False
+                                        self.inGame = True
+                                        self.ui_sprites.empty()
+                                        self.setup()
+                                        self.start_bgmusic.stop()
+                                elif ui.name == "ui_back_btn":
+                                    self.map_selected = False
+                                    self.map_ui_play_btn.set_dimmed(True)
+                                    for elem in self.map_selection_ui:
+                                        try:
+                                            elem.move_away()
+                                        except Exception:
+                                            pass
+                                    for elem in self.map_ui:
+                                        try:
+                                            elem.move_to()
+                                        except Exception:
+                                            pass
+                                    for elem in self.upgrade_ui:
+                                        try:
+                                            elem.move_away()
+                                        except Exception:
+                                            pass
+                                    self.logo.move_to()
 
                 elif event.type == pygame.MOUSEMOTION:
                     if self.dragging_tower:
