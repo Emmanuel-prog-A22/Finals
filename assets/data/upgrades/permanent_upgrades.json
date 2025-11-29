@@ -1,15 +1,15 @@
 {
     "archer_tower": {
-        "damage_mult": 1.6000000000000005,
-        "range_mult": 1.3000000000000003,
-        "fire_rate_mult": 0.7350918906249998,
-        "projectile_speed_mult": 1.6000000000000005
-    },
-    "stone_tower": {
         "damage_mult": 2.100000000000001,
         "range_mult": 1.5500000000000005,
         "fire_rate_mult": 0.5688000922764596,
         "projectile_speed_mult": 2.100000000000001
+    },
+    "stone_tower": {
+        "damage_mult": 2.7000000000000015,
+        "range_mult": 1.8500000000000008,
+        "fire_rate_mult": 0.41812033521917696,
+        "projectile_speed_mult": 2.7000000000000015
     },
     "slingshot_tower": {
         "damage_mult": 1.0,
@@ -18,9 +18,9 @@
         "projectile_speed_mult": 1.0
     },
     "bomb_tower": {
-        "damage_mult": 1.8000000000000007,
-        "range_mult": 1.4000000000000004,
-        "fire_rate_mult": 0.6634204312890623,
-        "projectile_speed_mult": 1.8000000000000007
+        "damage_mult": 2.100000000000001,
+        "range_mult": 1.5500000000000005,
+        "fire_rate_mult": 0.5688000922764596,
+        "projectile_speed_mult": 2.100000000000001
     }
 }
