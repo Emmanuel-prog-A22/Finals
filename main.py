@@ -392,20 +392,35 @@ class TowerDefense:
         self.path_rects = [pygame.Rect(x, y, TILE_SIZE, TILE_SIZE) for x, y in self.waypoints]
 
     def spawn_enemy(self, enemy_type):
-        """Spawns a monster based on AI output."""
-        monster_img = pygame.image.load(join('assets', 'images', '0.png'))  # or per type
+        """Spawns a monster based on its type with correct sprite and stats."""
+    
+        # Load stats for this enemy type
         stats = ENEMY_TYPES.get(enemy_type, ENEMY_TYPES["grunt"])
-
+    
+        # Build image path automatically
+        image_path = join('assets', 'images', 'enemies', f"{enemy_type}.png")
+    
+        # Try to load image — fallback for missing file
+        try:
+            monster_img = pygame.image.load(image_path).convert_alpha()
+        except:
+            print(f"[WARNING] Missing enemy sprite: {image_path}. Using default.")
+            monster_img = pygame.image.load(join('assets', 'images', 'enemies', 'grunt.png')).convert_alpha()
+    
+        # Create the monster
         monster = Monster(
             waypoints=self.waypoints,
             image=monster_img,
             speed=stats["speed"],
             group=self.all_sprites
         )
-
+    
+        # Assign additional attributes
         monster.hp = stats["hp"]
         monster.flying = stats.get("flying", False)
-
+        monster.type = enemy_type  # optional but useful
+    
+        # Add to monster group
         self.monsters.add(monster)
 
     def can_place_tower(self, pos, tower_size=(64,64)):
