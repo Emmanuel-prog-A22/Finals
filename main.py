@@ -456,7 +456,6 @@ class TowerDefense:
 
         return True
 
-
     def draw_tower_ui(self, surface):
         """
         Draw tower selection UI: upgrade/delete buttons and range indicator.
@@ -826,12 +825,26 @@ class TowerDefense:
             # Dragging tower preview
                 if self.dragging_tower:
                     pos = self.dragging_tower.rect.center
-                    valid = self.can_place_tower(pos)
+                    valid = self.can_place_tower(pos, tower_size=self.dragging_tower.rect.size)
+
+                    # Set color based on validity
                     color = (0, 255, 0) if valid else (255, 0, 0)
-                    overlay = pygame.Surface((80, 80), pygame.SRCALPHA)
-                    pygame.draw.circle(overlay, (*color, 80), (40, 40), 38)
-                    pygame.draw.circle(self.game_surface, color, pos, 40, 3)
-                    self.game_surface.blit(overlay, (pos[0] - 40, pos[1] - 40))
+
+                    # Correct overlay size to match tower size
+                    w, h = self.dragging_tower.rect.size
+                    scale = 0.6
+                    nw, nh = int(w * scale), int(h * scale)
+                    overlay = pygame.Surface((nw, nh), pygame.SRCALPHA)
+                    
+                    # Draw semi-transparent rectangle
+                    pygame.draw.rect(overlay, (*color, 80), (0, 0, nw, nh))
+                    
+                    # Draw outline rectangle on the game surface
+                    outline_rect = pygame.Rect(pos[0] - nw // 2, pos[1] - nh // 2, nw, nh)
+                    pygame.draw.rect(self.game_surface, color, outline_rect, 3)
+                    
+                    # Blit overlay and tower image
+                    self.game_surface.blit(overlay, (pos[0] - nw // 2, pos[1] - nh // 2))
                     self.game_surface.blit(self.dragging_tower.image, self.dragging_tower.rect.topleft)
 
                 # Draw tower menu
