@@ -466,25 +466,91 @@ class TowerDefense:
         Should be called each frame for all placed towers.
         """
         for tower in self.placed_towers:
-            # Draw selection outline if tower is selected
             tower.draw_selection(surface)
 
             if tower == self.selected_tower:
-                # --- Upgrade/Delete Buttons ---
-                tower.delete_button = pygame.Rect(tower.rect.right + 10, tower.rect.top, 50, 30)
-                tower.upgrade_button = pygame.Rect(tower.rect.right + 10, tower.rect.top + 40, 50, 30)
-                pygame.draw.rect(surface, (255, 0, 0), tower.delete_button)
-                pygame.draw.rect(surface, (0, 255, 0), tower.upgrade_button)
 
-                # --- Range Indicator (semi-transparent) ---
+                # --- Range Indicator ---
                 if hasattr(tower, "range"):
-                    overlay = pygame.Surface((tower.range*2, tower.range*2), pygame.SRCALPHA)
+                    overlay = pygame.Surface((tower.range * 2, tower.range * 2), pygame.SRCALPHA)
                     pygame.draw.circle(overlay, (0, 255, 0, 80), (tower.range, tower.range), tower.range)
                     pygame.draw.circle(overlay, (0, 255, 0), (tower.range, tower.range), tower.range, 2)
                     surface.blit(overlay, (tower.rect.centerx - tower.range, tower.rect.centery - tower.range))
+
+                # Medieval Colors
+                BROWN = (139, 69, 19)
+                DARK_BROWN = (100, 50, 15)
+                TEXT_COLOR = (240, 220, 180)
+                GOLD = (212, 175, 55)
+
+                font = pygame.font.Font("assets/Monocraft.ttc", 12)   
+
+                # Always draw delete button
+                tower.delete_button = pygame.Rect(tower.rect.right + 10, tower.rect.top, 80, 32)
+
+                # Draw DELETE
+                pygame.draw.rect(surface, BROWN, tower.delete_button, border_radius=6)
+                pygame.draw.rect(surface, DARK_BROWN, tower.delete_button, 2, border_radius=6)
+
+                delete_text = font.render("DELETE", True, TEXT_COLOR)
+                surface.blit(delete_text, (
+                    tower.delete_button.centerx - delete_text.get_width() // 2,
+                    tower.delete_button.centery - delete_text.get_height() // 2
+                ))
+
+                # --- Upgrade button only if tower can still upgrade ---
+                if tower.level < 3:
+                    tower.upgrade_button = pygame.Rect(tower.rect.right + 10, tower.rect.top + 40, 80, 32)
+
+                    # Draw UPGRADE button
+                    pygame.draw.rect(surface, BROWN, tower.upgrade_button, border_radius=6)
+                    pygame.draw.rect(surface, DARK_BROWN, tower.upgrade_button, 2, border_radius=6)
+
+                    upgrade_text = font.render("UPGRADE", True, TEXT_COLOR)
+                    surface.blit(upgrade_text, (
+                        tower.upgrade_button.centerx - upgrade_text.get_width() // 2,
+                        tower.upgrade_button.centery - upgrade_text.get_height() // 2
+                    ))
+
+                else:
+                    # When maxed: remove upgrade button
+                    tower.upgrade_button = None
+
+                    # Show MAX label
+                    # MAX badge rect
+                    max_rect = pygame.Rect(tower.rect.right + 10, tower.rect.top + 40, 80, 32)
+
+                    # Draw MAX background (same as upgrade button style)
+                    pygame.draw.rect(surface, BROWN, max_rect, border_radius=6)
+                    pygame.draw.rect(surface, DARK_BROWN, max_rect, 2, border_radius=6)
+
+                    # Draw MAX text
+                    max_text = font.render("MAX", True, GOLD)
+                    surface.blit(max_text, (
+                        max_rect.centerx - max_text.get_width() // 2,
+                        max_rect.centery - max_text.get_height() // 2
+                    ))
+
+                # --- Level Banner (always shown) ---
+                banner = pygame.Rect(
+                    tower.rect.right + 10,
+                    tower.rect.top + 80,
+                    80, 28
+                )
+
+                pygame.draw.rect(surface, GOLD, banner, border_radius=4)
+                pygame.draw.rect(surface, DARK_BROWN, banner, 2, border_radius=4)
+
+                level_text = font.render(f"Lvl {tower.level}", True, (50, 30, 10))
+                surface.blit(level_text, (
+                    banner.centerx - level_text.get_width() // 2,
+                    banner.centery - level_text.get_height() // 2
+                ))
+
             else:
                 tower.delete_button = None
                 tower.upgrade_button = None
+
 
     def draw_right_hud(self, surface):
         # Right panel matches height of left panel

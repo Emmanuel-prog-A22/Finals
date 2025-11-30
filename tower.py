@@ -7,7 +7,7 @@ class Tower(pygame.sprite.Sprite):
                 money_system=None, tower_type=None,sound_path=None):
 
         super().__init__()
-
+        MAX_LEVEL = 3
         # --- Images ---
         self.idle_frames = [pygame.transform.scale(img, size) for img in idle_frames]
         self.building_frames = [pygame.transform.scale(img, size) for img in building_frames]
@@ -164,6 +164,14 @@ class Tower(pygame.sprite.Sprite):
     # Upgrade Tower
     # -----------------------------
     def upgrade(self):
+        MAX_LEVEL = 3  
+        # Prevent upgrades if max reached
+        if self.level >= MAX_LEVEL:
+            print("Tower already at max level!")
+            return
+        # Prevent upgrading while already upgrading
+        if self.state == "upgrading":
+            return
         if self.state != "upgrading" and self.level < len(self.upgrade_frames):
             self.level += 1
             self.state = "upgrading"
