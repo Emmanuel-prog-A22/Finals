@@ -1,2 +1,1 @@
-
-                data = json.load(f)
+delete_button
